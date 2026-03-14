@@ -1,0 +1,175 @@
+#!/data/data/com.termux/files/usr/bin/bash
+#
+#	-> Does the job of a helper, with downloading feature.
+#      Only edited and configured for Termux environment.
+#
+# About: Apktool wrapper script remake
+# Date: Mon, Mar 2
+# Tip: For uninstalling, start wizard when internet connection is disabled.
+#
+# (Follow me on, GitHub.)
+#
+
+
+declare file_name=
+declare is_required=false
+declare default_option="-Xmx768M -Dfile.encoding=utf-8 -Djdk.util.zip.disableZip64ExtraFieldValidation=true -Djdk.nio.zipfs.allowDotZipEntry=true"
+declare current_version=
+declare -i total_retries=1
+declare archive_directory="$HOME/.local/share/apktool/executable"
+
+function verify {
+	if (($# != 1)); then
+		echo "More or less input isn't preferred."
+		echo "Just a single is enough."
+		return 2
+	fi
+
+	if [[ $1 =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function download {
+	local -i status_code=
+
+	if (($# == 2)); then
+		if curl $1 -I --retry $total_retries -s &> "/dev/null"; then
+			echo "I: Downloading file: $(basename -a $2)"
+			curl $1 -L -o $2 --retry $total_retries -s
+			status_code=$?
+
+			if ((status_code == 0)); then
+				echo "I: File saved to your device."
+			else
+				echo "E: Couldn't finish ongoing download properly."
+				echo "W: Beware, possiblities have of corruption."
+			fi
+		else
+			echo "E: Can't reach to source website."
+			status_code=1
+		fi
+	else
+		echo "More or less input isn't preferred."
+		echo "Just a double is enough."
+		status_code=2
+	fi
+
+	return $status_code
+}
+
+while true; do
+	case $1 in
+		"u" | "use") {
+			if ! verify $2; then
+				echo "E: Invalid version detected."
+				echo "W: Input must follow standard (SemVer) pattern."
+				exit 1
+			fi
+
+			current_version=$2
+			shift 2
+			continue
+		}
+		;;
+		"-i" | "--install") {
+			is_required=true
+			shift
+			continue
+		}
+		;;
+		"-c" | "--count") {
+			if [[ ! $2 =~ ^[0-9]+$ ]] || (($2 < 0)); then
+				echo "E: Invalid integer detected."
+				echo "W: It should be greater than negative numbers."
+				exit 1
+			fi
+
+			total_retries=$2
+			shift 2
+			continue
+		}
+		;;
+		*) break;;
+	esac
+done
+
+if [[ ! -d $archive_directory ]]; then
+	mkdir -p $archive_directory
+fi
+
+if [[ -z $current_version ]]; then
+	file_name=$(ls -q -U -1 $archive_directory/apktool_*.jar 2> "/dev/null" | sort -V | tail -n 1)
+
+	if [[ -z $file_name ]]; then
+		if $is_required; then
+			echo "I: Checking for update..."
+			current_version=$(curl "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest" --retry $total_retries -s | grep -oP '"tag_name": "v\K[0-9.]+')
+
+			if [[ -n $current_version ]]; then
+				echo "I: Found most recent version: $current_version"
+			else
+				echo "E: Failed to fetch database."
+				exit 1
+			fi
+		else
+			echo "E: The program was never installed."
+			exit 1
+		fi
+	fi
+else
+	echo "I: Selected specified version:" $current_version
+
+	if $is_required; then
+		echo "I: Will be installed automatically in need."
+	fi
+fi
+
+if [[ -z $file_name ]]; then
+	file_name=$archive_directory"/apktool_"$current_version".jar"
+fi
+
+if $is_required; then
+	if [[ -e $file_name ]]; then
+		echo "W: File already exists."
+		rm -f -i -r -v $file_name
+	fi
+	if [[ -e $file_name ]]; then
+		echo "kept '$file_name'"
+	else
+		download "https://www.github.com/iBotPeaches/Apktool/releases/download/v$current_version/apktool_"$current_version".jar" $file_name || exit $?
+	fi
+else
+	if [[ ! -e $file_name ]]; then
+		echo "E: It must be installed before using."
+		exit 1
+	fi
+fi
+
+if [[ -z $(type -t java) ]]; then
+	echo "W: Can't locate required packages."
+	echo "I: Trying to install the lowest version..."
+	apt-get install $(pkg list-all 2> "/dev/null" | grep -oE "openjdk-[0-9]+" | sort -b -V -u | head -n 1) -q -y || {
+		echo "E: Target packages aren't installed."
+		exit 1
+	}
+fi
+
+if (($# == 0)); then
+	echo "W: No command found."
+	echo -e "I: Visit here for more details: \e[1;4;36mhttps://www.github.com/vinashakah/dollhouse\e[0m"
+	exit 1
+fi
+
+while expr $1 : "x-J" &> "/dev/null"; do
+	default_option="$default_option -$(expr $1 : '-J\(.*\)')"
+	shift
+done
+
+
+
+## The final blow...
+## Let's go!
+exec java $default_option -jar $file_name $@
