@@ -159,7 +159,7 @@ fi
 
 if (($# == 0)); then
 	echo "W: No command found."
-	echo -e "I: Visit here for more details: \e[1;4;36mhttps://www.github.com/vinashakah/dollhouse\e[0m"
+	echo -e "I: Visit here for more details: \e[1;4;36mhttps://www.github.com/vinashakah/toybox\e[0m"
 	exit 1
 fi
 
