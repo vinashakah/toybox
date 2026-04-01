@@ -50,7 +50,7 @@ cat > "panel-plugin/wi_linux.c" << "EOF"
  * is strictly denied, so please at least keep me.
  *
  * Contact: GitHub (@vinashakah)
- * Description: Recreated Wi-Fi status checker and information fetcher supporting only Android.
+ * Description: Recreated Wi-Fi status checker and information fetcher supporting only Termux.
  */
 
 
