@@ -285,7 +285,7 @@ int wi_query(struct wi_device * device, struct wi_stats * stats)
 
         /* *** RSSI is usually between -100 (terrible) and -50 (perfect) ***
          * We use a simple linear equation to map this to 0-100%.
-         * Formula: 2 * (RSSI + 100)
+         * Formula: 2 × (RSSI + 100)
          */
 
         int quality = 2 * (rssi + 100);
