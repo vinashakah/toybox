@@ -7,6 +7,7 @@
 
 
 declare -a package_list=("autoconf" "automake" "gettext" "libtool" "proot" "xfce4-dev-tools" "xorgproto")
+declare -i total_tries=
 
 if (($# == 0)); then
     echo "Don't mess up here, or it'll become very time wasting then."
@@ -18,18 +19,24 @@ echo -n "Warning:"
 printf "\033[0m"
 echo " To make this working perfectly fine, confirm installation of XFCE Desktop Environment and then execute it, or press [Ctrl+C] combination."
 echo -n "Waiting for user interruption... "
-sleep 5
+sleep 3
 echo "Time's Up."
-dpkg -V ${package_list[@]} || pkg --check-mirror add ${package_list[@]} -y || {
-    echo "We've missed a few important packages."
-    exit 1
-}
-echo "Downloading source code..."
 cd "$PREFIX/tmp"
-curl "https://www.github.com/xfce-mirror/xfce4-wavelan-plugin/archive/refs/tags/xfce4-wavelan-plugin-0.6.4.zip" -L -O || {
-    echo "Downloading wasn't succeeded previously."
-    exit 1
-}
+
+while true; do
+    if ((total_tries == 5)); then
+        echo "Never thought to stuck here, it's a very silly situation for real."
+        sleep 3
+        total_tries=
+    fi
+
+    dpkg -V ${package_list[@]} || pkg --check-mirror add ${package_list[@]} -y || ((++ total_tries)) && continue
+    curl "https://www.github.com/xfce-mirror/xfce4-wavelan-plugin/archive/refs/tags/xfce4-wavelan-plugin-0.6.4.zip" -L -O || ((++ total_tries)) && continue
+    echo "Let's rock!"
+    clear
+    break
+done
+
 echo "Compiling manually..."
 unzip -o "xfce4-wavelan-plugin-0.6.4.zip"
 cd "xfce4-wavelan-plugin-xfce4-wavelan-plugin-0.6.4"
