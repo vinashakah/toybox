@@ -26,7 +26,10 @@ dpkg -V ${package_list[@]} || pkg --check-mirror add ${package_list[@]} -y || {
 }
 echo "Downloading source code..."
 cd "$PREFIX/tmp"
-curl "https://www.github.com/xfce-mirror/xfce4-wavelan-plugin/archive/refs/tags/xfce4-wavelan-plugin-0.6.4.zip" -L -O
+curl "https://www.github.com/xfce-mirror/xfce4-wavelan-plugin/archive/refs/tags/xfce4-wavelan-plugin-0.6.4.zip" -L -O || {
+    echo "Downloading wasn't succeeded previously."
+    exit 1
+}
 echo "Compiling manually..."
 unzip -o "xfce4-wavelan-plugin-0.6.4.zip"
 cd "xfce4-wavelan-plugin-xfce4-wavelan-plugin-0.6.4"
